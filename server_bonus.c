@@ -1,21 +1,47 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.c                                           :+:      :+:    :+:   */
+/*   server_bonus.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mouarar <mouarar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/09 10:27:41 by mouarar           #+#    #+#             */
-/*   Updated: 2025/02/16 17:04:51 by mouarar          ###   ########.fr       */
+/*   Created: 2025/02/15 11:59:27 by mouarar           #+#    #+#             */
+/*   Updated: 2025/02/16 17:19:23 by mouarar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
+#include "minitalk_bonus.h"
+
+void	printer(int *bit_number, unsigned char *c, int *client_pid, int *i)
+{
+	static int	size;
+	static char	str[8];
+
+	if (*bit_number == 8)
+	{
+		if (*i == 0)
+			size = character_size(*c);
+		str[(*i)++] = *c;
+		if (*c == '\0')
+		{
+			kill(*client_pid, SIGUSR1);
+		}
+		if (--size == 0)
+		{
+			str[*i] = '\0';
+			ft_putstr(str);
+			*i = 0;
+		}
+		*c = 0;
+		*bit_number = 0;
+	}
+}
 
 static void	handel(int sig, siginfo_t *siginfo, void *moreinfo)
 {
 	static int					bit_number;
 	static int					pid;
+	static int					i;
 	static unsigned char		character;
 
 	(void)moreinfo;
@@ -24,36 +50,12 @@ static void	handel(int sig, siginfo_t *siginfo, void *moreinfo)
 		pid = siginfo->si_pid;
 		bit_number = 0;
 		character = 0;
+		i = 0;
 	}
 	if (sig == SIGUSR1)
-	{
 		character |= (1 << bit_number);
-	}
 	bit_number++;
-	if (bit_number == 8)
-	{
-		if (character == '\0')
-			write(1, "\n", 1);
-		write(1, &character, 1);
-		character = 0;
-		bit_number = 0;
-	}
-}
-
-void	print_pid(unsigned long long num)
-{
-	char	number;
-
-	if (num > 9)
-	{
-		print_pid(num / 10);
-		print_pid(num % 10);
-	}
-	else
-	{
-		number = num + 48;
-		write(1, &number, 1);
-	}
+	printer(&bit_number, &character, &pid, &i);
 }
 
 int	main(void)
